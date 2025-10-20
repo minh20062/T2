@@ -17,6 +17,7 @@ app.use(express.json());
 // 3. ĐỊNH TUYẾN GỐC: Tất cả các route trong userRoutes sẽ bắt đầu bằng /api/v1/users
 app.use('/api/v1/users', userRoutes); 
 
+
 // 3. Xây dựng Route/Endpoint đầu tiên (API chào mừng)
 // Phương thức GET, đường dẫn '/'
 app.get('/', (req, res) => {
@@ -30,9 +31,11 @@ app.get('/api/v1/status', (req, res) => {
         service: "User Data API", 
         version: "1.0", 
         health: "Good",
+        message: "Server hoạt động bình thường!",
         timestamp: new Date().toISOString() // Thêm thời gian hiện tại
     });
 });
+
 
 // 4. Lắng nghe các yêu cầu tại cổng đã định nghĩa
 app.listen(PORT, () => {
