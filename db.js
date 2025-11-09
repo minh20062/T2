@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
+
 console.log('🔍 MONGO_URI đang dùng là:', process.env.MONGO_URI);
 
 const connectDB = async () => {
@@ -16,7 +17,6 @@ const connectDB = async () => {
   }
 };
 
-// Theo dõi trạng thái kết nối
 mongoose.connection.on('connected', () => {
   console.log('📡 Mongoose đã kết nối tới MongoDB Atlas');
 });
