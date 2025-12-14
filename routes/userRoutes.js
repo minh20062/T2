@@ -2,14 +2,15 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 
-// ✅ CREATE USER
+// ✅ Import middleware
+const { protect, authorize } = require('../middleware/authMiddleware');
 
-
-// ✅ READ ALL USERS
-router.get('/', async (req, res) => {
+// ✅ GET ALL USERS (Admin only)
+router.get('/', protect, authorize('admin'), async (req, res) => {
   try {
     const users = await User.find();
     res.status(200).json({
+      message: "Lấy danh sách Users thành công (Admin only)",
       count: users.length,
       data: users
     });
@@ -18,11 +19,18 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ✅ READ ONE USER
-router.get('/:id', async (req, res) => {
+// ✅ GET /me (User tự xem profile)
+router.get('/me', protect, async (req, res) => {
+  res.status(200).json({
+    message: "Lấy thông tin cá nhân thành công",
+    data: req.user
+  });
+});
+
+// ✅ GET USER BY ID (Admin only)
+router.get('/:id', protect, authorize('admin'), async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
-
     if (!user)
       return res.status(404).json({ message: "Không tìm thấy User" });
 
@@ -32,13 +40,13 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// ✅ UPDATE USER
-router.put('/:id', async (req, res) => {
+// ✅ UPDATE USER (Admin only)
+router.put('/:id', protect, authorize('admin'), async (req, res) => {
   try {
     const updated = await User.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true }
+      { new: true, runValidators: true }
     );
 
     if (!updated)
@@ -53,8 +61,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// ✅ DELETE USER
-router.delete('/:id', async (req, res) => {
+// ✅ DELETE USER (Admin only)
+router.delete('/:id', protect, authorize('admin'), async (req, res) => {
   try {
     const deleted = await User.findByIdAndDelete(req.params.id);
 
