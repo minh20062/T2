@@ -1,30 +1,33 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
-    required: [true, 'Tên đăng nhập không được để trống'],
+    required: [true, 'Username is required'],
     unique: true,
     trim: true,
-    minlength: [3, 'Tên đăng nhập phải có ít nhất 3 ký tự'],
-    maxlength: [30, 'Tên đăng nhập không được quá 30 ký tự']
+    minlength: [3, 'Username must be at least 3 characters long']
   },
 
   email: {
     type: String,
-    required: [true, 'Email không được để trống'],
+    required: [true, 'Email is required'],
     unique: true,
     lowercase: true,
     trim: true,
     match: [
       /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-      'Vui lòng nhập email hợp lệ'
+      'Please enter a valid email address'
     ]
   },
 
-  passwordHash: {
+  // ✅ Tuần 07: đổi passwordHash → password
+  password: {
     type: String,
-    required: [true, 'Password không được để trống']
+    required: [true, 'Password is required'],
+    minlength: [6, 'Password must be at least 6 characters long'],
+    select: false // ✅ Không bao giờ trả về password trong API
   },
 
   profile: {
@@ -32,18 +35,30 @@ const userSchema = new mongoose.Schema({
     phone: { type: String, trim: true, default: '' }
   },
 
-  orders: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }],
-  wishlist: { type: mongoose.Schema.Types.ObjectId, ref: 'Wishlist' },
-  cart: { type: mongoose.Schema.Types.ObjectId, ref: 'Cart' },
-
   role: {
     type: String,
-    enum: {
-      values: ['user', 'admin', 'moderator'],
-      message: 'Vai trò "{VALUE}" không hợp lệ'
-    },
+    enum: ['user', 'admin'],
     default: 'user'
-  }
+  },
+
+  orders: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }],
+  wishlist: { type: mongoose.Schema.Types.ObjectId, ref: 'Wishlist' },
+  cart: { type: mongoose.Schema.Types.ObjectId, ref: 'Cart' }
+
 }, { timestamps: true });
+
+
+// ✅ Tuần 07: Tự động hash mật khẩu trước khi lưu
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
+
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 module.exports = mongoose.model('User', userSchema);

@@ -6,6 +6,7 @@ const User = require('../models/User');
 router.post('/', async (req, res) => {
   try {
     const newUser = await User.create(req.body);
+    newUser.password = undefined;
     res.status(201).json({
       message: "Tạo User thành công!",
       data: newUser
