@@ -3,21 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 
 // ✅ CREATE USER
-router.post('/', async (req, res) => {
-  try {
-    const newUser = await User.create(req.body);
-    newUser.password = undefined;
-    res.status(201).json({
-      message: "Tạo User thành công!",
-      data: newUser
-    });
-  } catch (err) {
-    res.status(400).json({
-      message: "Tạo User thất bại",
-      error: err.message
-    });
-  }
-});
+
 
 // ✅ READ ALL USERS
 router.get('/', async (req, res) => {
