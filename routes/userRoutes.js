@@ -8,9 +8,8 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 // ✅ GET ALL USERS (Admin only)
 router.get('/', protect, authorize('admin'), async (req, res) => {
   try {
-    const users = await User.find();
+    const users = await User.find().select('-password');
     res.status(200).json({
-      message: "Lấy danh sách Users thành công (Admin only)",
       count: users.length,
       data: users
     });
@@ -26,6 +25,28 @@ router.get('/me', protect, async (req, res) => {
     data: req.user
   });
 });
+
+// PUT /api/v1/users/me
+router.put('/me', protect, async (req, res) => {
+  try {
+    // Chỉ cho phép sửa profile, không cho sửa role, password, email
+    const { profile } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { profile: profile },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    res.status(200).json({
+      message: "Cập nhật hồ sơ thành công",
+      data: updatedUser
+    });
+  } catch (err) {
+    res.status(400).json({ message: "Cập nhật thất bại", error: err.message });
+  }
+});
+
 
 // ✅ GET USER BY ID (Admin only)
 router.get('/:id', protect, authorize('admin'), async (req, res) => {
