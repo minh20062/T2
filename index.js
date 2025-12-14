@@ -15,6 +15,7 @@ const PORT = process.env.PORT || 3000;
 
 // 5. IMPORT Router
 const userRoutes = require('./routes/userRoutes');
+const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 
@@ -24,6 +25,7 @@ app.use(express.json());
 
 // 7. ĐỊNH TUYẾN GỐC
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/categories', categoryRoutes);
 
