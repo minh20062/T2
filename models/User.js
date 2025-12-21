@@ -32,7 +32,9 @@ const userSchema = new mongoose.Schema({
 
   profile: {
     fullName: { type: String, trim: true, default: '' },
-    phone: { type: String, trim: true, default: '' }
+    phone: { type: String, trim: true, default: '' },
+    avatarUrl: { type: String, trim: true, default: '' }
+
   },
 
   role: {

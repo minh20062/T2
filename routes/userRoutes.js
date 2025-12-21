@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const { upload, uploadToCloudinary } = require('../utils/cloudinary');
 
 // ✅ Import middleware
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // ✅ GET ALL USERS (Admin only)
-router.get('/', protect, authorize('admin'), async (req, res) => {
+router.get('/', protect, authorize('admin'), async (req, res, next) => {
   try {
     const users = await User.find().select('-password');
     res.status(200).json({
@@ -14,7 +15,7 @@ router.get('/', protect, authorize('admin'), async (req, res) => {
       data: users
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -26,15 +27,14 @@ router.get('/me', protect, async (req, res) => {
   });
 });
 
-// PUT /api/v1/users/me
-router.put('/me', protect, async (req, res) => {
+// ✅ UPDATE PROFILE (User)
+router.put('/me', protect, async (req, res, next) => {
   try {
-    // Chỉ cho phép sửa profile, không cho sửa role, password, email
     const { profile } = req.body;
 
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
-      { profile: profile },
+      { profile },
       { new: true, runValidators: true }
     ).select('-password');
 
@@ -43,26 +43,28 @@ router.put('/me', protect, async (req, res) => {
       data: updatedUser
     });
   } catch (err) {
-    res.status(400).json({ message: "Cập nhật thất bại", error: err.message });
+    next(err);
   }
 });
 
-
 // ✅ GET USER BY ID (Admin only)
-router.get('/:id', protect, authorize('admin'), async (req, res) => {
+router.get('/:id', protect, authorize('admin'), async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
-    if (!user)
-      return res.status(404).json({ message: "Không tìm thấy User" });
+
+    if (!user) {
+      res.status(404);
+      throw new Error("Không tìm thấy User");
+    }
 
     res.status(200).json({ data: user });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    next(err);
   }
 });
 
 // ✅ UPDATE USER (Admin only)
-router.put('/:id', protect, authorize('admin'), async (req, res) => {
+router.put('/:id', protect, authorize('admin'), async (req, res, next) => {
   try {
     const updated = await User.findByIdAndUpdate(
       req.params.id,
@@ -70,29 +72,56 @@ router.put('/:id', protect, authorize('admin'), async (req, res) => {
       { new: true, runValidators: true }
     );
 
-    if (!updated)
-      return res.status(404).json({ message: "Không tìm thấy User để cập nhật" });
+    if (!updated) {
+      res.status(404);
+      throw new Error("Không tìm thấy User để cập nhật");
+    }
 
     res.status(200).json({
       message: "Cập nhật thành công",
       data: updated
     });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    next(err);
   }
 });
 
 // ✅ DELETE USER (Admin only)
-router.delete('/:id', protect, authorize('admin'), async (req, res) => {
+router.delete('/:id', protect, authorize('admin'), async (req, res, next) => {
   try {
     const deleted = await User.findByIdAndDelete(req.params.id);
 
-    if (!deleted)
-      return res.status(404).json({ message: "Không tìm thấy User để xóa" });
+    if (!deleted) {
+      res.status(404);
+      throw new Error("Không tìm thấy User để xóa");
+    }
 
     res.status(204).send();
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    next(err);
+  }
+});
+
+// ✅ UPLOAD AVATAR
+router.post('/upload-avatar', protect, upload.single('avatar'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      res.status(400);
+      throw new Error('Chưa chọn file ảnh');
+    }
+
+    const result = await uploadToCloudinary(req.file.buffer);
+
+    const user = await User.findById(req.user._id);
+    user.profile.avatarUrl = result.secure_url;
+    await user.save({ validateBeforeSave: false });
+
+    res.json({
+      message: 'Upload thành công',
+      avatarUrl: result.secure_url
+    });
+  } catch (error) {
+    next(error);
   }
 });
 
